@@ -1,0 +1,160 @@
+# Team-specific query configurations
+# Each team can maintain their own query definitions
+
+queries:
+  # Infrastructure Team Queries
+  - name: disk_usage_by_node
+    team: infrastructure
+    description: Monitor disk usage across cluster nodes
+    interval: 300s
+    indices: ".monitoring-es-*"
+    query:
+      size: 0
+      query:
+        range:
+          timestamp:
+            gte: "now-5m"
+      aggs:
+        by_node:
+          terms:
+            field: "source_node.name"
+            size: 50
+          aggs:
+            disk_usage:
+              avg:
+                field: "node_stats.fs.total.available_in_bytes"
+
+  # Security Team Queries
+  - name: failed_login_attempts
+    team: security
+    description: Track failed authentication attempts
+    interval: 60s
+    indices: "security-logs-*"
+    query:
+      size: 0
+      query:
+        bool:
+          must:
+            - match:
+                event.category: "authentication"
+            - match:
+                event.outcome: "failure"
+            - range:
+                "@timestamp":
+                  gte: "now-5m"
+      aggs:
+        by_user:
+          terms:
+            field: "user.name.keyword"
+            size: 20
+            order:
+              _count: desc
+
+  # Application Team Queries
+  - name: api_endpoint_usage
+    team: api
+    description: API endpoint usage statistics
+    interval: 120s
+    indices: "api-logs-*"
+    query:
+      size: 0
+      query:
+        range:
+          "@timestamp":
+            gte: "now-10m"
+      aggs:
+        by_endpoint:
+          terms:
+            field: "http.request.path.keyword"
+            size: 50
+          aggs:
+            by_method:
+              terms:
+                field: "http.request.method"
+              aggs:
+                response_codes:
+                  terms:
+                    field: "http.response.status_code"
+                avg_duration:
+                  avg:
+                    field: "event.duration"
+
+  # Data Pipeline Team Queries
+  - name: pipeline_throughput
+    team: data_pipeline
+    description: Monitor data pipeline processing rates
+    interval: 60s
+    indices: "pipeline-metrics-*"
+    query:
+      size: 0
+      query:
+        range:
+          timestamp:
+            gte: "now-5m"
+      aggs:
+        by_pipeline:
+          terms:
+            field: "pipeline.name.keyword"
+          aggs:
+            processed_count:
+              sum:
+                field: "pipeline.events.processed"
+            failed_count:
+              sum:
+                field: "pipeline.events.failed"
+            avg_processing_time:
+              avg:
+                field: "pipeline.processing_time_ms"
+    metrics:
+      # Define custom metrics with specific paths and labels
+      - name: pipeline_processed_total
+        path: aggregations.by_pipeline.buckets
+        help: Total events processed by pipeline
+        label_paths:
+          pipeline: key
+          processed: processed_count.value
+      - name: pipeline_failed_total
+        path: aggregations.by_pipeline.buckets
+        help: Total events failed by pipeline
+        label_paths:
+          pipeline: key
+          failed: failed_count.value
+
+  # Business Intelligence Team Queries
+  - name: revenue_metrics
+    team: business_intelligence
+    description: Real-time revenue tracking
+    interval: 300s
+    indices: "transactions-*"
+    query:
+      size: 0
+      query:
+        bool:
+          must:
+            - match:
+                transaction.status: "completed"
+            - range:
+                "@timestamp":
+                  gte: "now-1h"
+      aggs:
+        total_revenue:
+          sum:
+            field: "transaction.amount"
+        by_product_category:
+          terms:
+            field: "product.category.keyword"
+            size: 20
+          aggs:
+            category_revenue:
+              sum:
+                field: "transaction.amount"
+            transaction_count:
+              value_count:
+                field: "transaction.id"
+        by_region:
+          terms:
+            field: "customer.region.keyword"
+          aggs:
+            region_revenue:
+              sum:
+                field: "transaction.amount"

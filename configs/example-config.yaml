@@ -1,0 +1,129 @@
+# OpenSearch Exporter Configuration
+# This file demonstrates how teams can configure their queries
+
+# OpenSearch connection settings (can be overridden by command-line flags)
+opensearch_url: https://opensearch.example.com:9200
+
+# Authentication credentials (required)
+# The exporter will try each credential in order until one succeeds
+credentials:
+  - username: "primary_user"
+    password: "primary_password"
+  - username: "backup_user"
+    password: "backup_password"
+  # Add more credentials as needed for failover
+  # - username: "another_user"
+  #   password: "another_password"
+
+# Path to the CA certificate used to verify the OpenSearch public endpoint
+# If running in test environments, you may set insecure: true instead of providing a CA
+ca_cert_path: /etc/ssl/certs/opensearch-ca.pem
+insecure: false
+timeout: 30s
+
+# Query definitions
+# Each team should define their queries here
+queries:
+  # Example 1: Simple document count query
+  - name: all_documents
+    team: platform
+    description: Count all documents in the cluster
+    interval: 60s  # How often to run this query
+    indices: "_all"  # Which indices to query
+    query:
+      size: 0  # Don't return actual documents
+      query:
+        match_all: {}
+
+  # Example 2: Error log monitoring
+  - name: error_logs
+    team: sre
+    description: Count error logs in the last 5 minutes
+    interval: 30s
+    indices: "logs-*"
+    query:
+      size: 0
+      query:
+        bool:
+          must:
+            - match:
+                level: "ERROR"
+            - range:
+                "@timestamp":
+                  gte: "now-5m"
+
+  # Example 3: Aggregation query with buckets
+  - name: errors_by_service
+    team: sre
+    description: Count errors grouped by service
+    interval: 60s
+    indices: "logs-*"
+    query:
+      size: 0
+      query:
+        bool:
+          must:
+            - match:
+                level: "ERROR"
+            - range:
+                "@timestamp":
+                  gte: "now-5m"
+      aggs:
+        by_service:
+          terms:
+            field: "service.keyword"
+            size: 20
+          aggs:
+            error_count:
+              value_count:
+                field: "_id"
+
+  # Example 4: Performance metrics
+  - name: response_time_stats
+    team: performance
+    description: API response time statistics
+    interval: 120s
+    indices: "api-metrics-*"
+    query:
+      size: 0
+      query:
+        range:
+          "@timestamp":
+            gte: "now-10m"
+      aggs:
+        response_time_percentiles:
+          percentiles:
+            field: "response_time_ms"
+            percents: [50, 95, 99]
+        avg_response_time:
+          avg:
+            field: "response_time_ms"
+
+  # Example 5: Custom metrics extraction
+  - name: user_activity
+    team: product
+    description: User activity metrics
+    interval: 300s
+    indices: "user-events-*"
+    query:
+      size: 0
+      query:
+        range:
+          "@timestamp":
+            gte: "now-1h"
+      aggs:
+        unique_users:
+          cardinality:
+            field: "user_id.keyword"
+        events_by_type:
+          terms:
+            field: "event_type.keyword"
+            size: 10
+    # Custom metric mappings
+    metrics:
+      - name: unique_users_count
+        path: aggregations.unique_users.value
+        help: Number of unique users in the last hour
+      - name: total_events
+        path: hits.total.value
+        help: Total number of user events in the last hour

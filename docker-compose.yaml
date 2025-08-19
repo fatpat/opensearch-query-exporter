@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: opensearch
+    environment:
+      - discovery.type=single-node
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISABLE_SECURITY_PLUGIN=true"  # Disable security for easy local testing
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    networks:
+      - opensearch-net
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.11.0
+    container_name: opensearch-dashboards
+    ports:
+      - "5601:5601"
+    environment:
+      - 'OPENSEARCH_HOSTS=["http://opensearch:9200"]'
+      - "DISABLE_SECURITY_DASHBOARDS_PLUGIN=true"
+    networks:
+      - opensearch-net
+    depends_on:
+      - opensearch
+
+  opensearch-query-exporter:
+    build: .
+    container_name: opensearch-query-exporter
+    ports:
+      - "9206:9206"
+    volumes:
+      - ./configs/example-config.yaml:/config/config.yaml:ro
+      - ./certs/opensearch-ca.pem:/etc/ssl/certs/opensearch-ca.pem:ro
+    command:
+      - "-config"
+      - "/config/config.yaml"
+      - "-opensearch-url"
+      - "https://opensearch:9200"
+    networks:
+      - opensearch-net
+    depends_on:
+      - opensearch
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - opensearch-net
+    depends_on:
+      - opensearch-query-exporter
+
+volumes:
+  opensearch-data:
+  prometheus-data:
+
+networks:
+  opensearch-net:

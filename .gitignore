@@ -1,0 +1,50 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+opensearch-query-exporter
+opensearch-query-exporter-*
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+coverage.txt
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Configuration files with secrets
+config.yaml
+config.yml
+*.secret.yaml
+*.secret.yml
+
+# Docker volumes
+data/
+
+# Temporary files
+*.tmp
+*.log
+
+# Build artifacts
+dist/
+build/
