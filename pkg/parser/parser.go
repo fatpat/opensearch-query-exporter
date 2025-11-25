@@ -47,9 +47,14 @@ func ParseResponse(response map[string]interface{}, query config.Query, prefix s
 		}
 	}
 
+	labels := map[string]string{}
+	for k, v := range query.Labels {
+		labels[k] = v
+	}
+
 	// Parse aggregations if present
 	if aggs, ok := response["aggregations"].(map[string]interface{}); ok {
-		aggMetrics := parseAggregations(aggs, query.Name, nil, prefix, bucket_metrics)
+		aggMetrics := parseAggregations(aggs, query.Name, labels, prefix, bucket_metrics)
 		metrics = append(metrics, aggMetrics...)
 	}
 
@@ -86,6 +91,14 @@ func extractMetric(response map[string]interface{}, query config.Query, metricCo
 	labels := make(map[string]string)
 	labelNames := []string{}
 	labelValues := []string{}
+
+	fmt.Printf("labels=%v\n", query.Labels)
+	// Add common static labels
+	for k, v := range query.Labels {
+		labels[k] = v
+		labelNames = append(labelNames, k)
+		labelValues = append(labelValues, v)
+	}
 
 	// Add static labels
 	for k, v := range metricConfig.Labels {

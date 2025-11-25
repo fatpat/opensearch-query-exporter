@@ -11,16 +11,17 @@ import (
 
 // Config represents the main configuration structure
 type Config struct {
-	OpenSearchURL                string        `yaml:"opensearch_url"`
-	Credentials                  []Credential  `yaml:"credentials"`
-	CACertPath                   string        `yaml:"ca_cert_path"`
-	Insecure                     bool          `yaml:"insecure"`
-	Timeout                      time.Duration `yaml:"timeout"`
-	Queries                      []Query       `yaml:"queries"`
-	ClusterHealthMetricsDisabled bool          `yaml:"cluster_health_metrics_disabled"`
-	OpensearchUpMetricDisabled   bool          `yaml:"opensearch_up_metric_disabled"`
-	PromInternalMetricsDisabled  bool          `yaml:"prometheus_internal_metrics_disabled"`
-	QueryNamePrefix              string        `yaml:"query_name_prefix"`
+	OpenSearchURL                string            `yaml:"opensearch_url"`
+	Credentials                  []Credential      `yaml:"credentials"`
+	CACertPath                   string            `yaml:"ca_cert_path"`
+	Insecure                     bool              `yaml:"insecure"`
+	Timeout                      time.Duration     `yaml:"timeout"`
+	Queries                      []Query           `yaml:"queries"`
+	ClusterHealthMetricsDisabled bool              `yaml:"cluster_health_metrics_disabled"`
+	OpensearchUpMetricDisabled   bool              `yaml:"opensearch_up_metric_disabled"`
+	PromInternalMetricsDisabled  bool              `yaml:"prometheus_internal_metrics_disabled"`
+	QueryNamePrefix              string            `yaml:"query_name_prefix"`
+	Labels                       map[string]string `yaml:"labels"`
 }
 
 // Credential represents a set of authentication credentials
@@ -38,6 +39,7 @@ type Query struct {
 	Query                 map[string]interface{} `yaml:"query"`
 	Metrics               []MetricMapping        `yaml:"metrics"`
 	BucketMetricsDisabled bool                   `yaml:"bucket_metrics_disabled"`
+	Labels                map[string]string      `yaml:"labels"`
 }
 
 // MetricMapping defines how to extract metrics from query results
@@ -106,6 +108,15 @@ func LoadConfig(path string) (*Config, error) {
 		}
 		if config.Queries[i].Query == nil {
 			return nil, fmt.Errorf("query %s: query body is required", config.Queries[i].Name)
+		}
+
+		if config.Queries[i].Labels == nil {
+			config.Queries[i].Labels = map[string]string{}
+		}
+		for k, v := range config.Labels {
+			if _, ok := config.Queries[i].Labels[k]; !ok {
+				config.Queries[i].Labels[k] = v
+			}
 		}
 	}
 
