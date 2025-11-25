@@ -10,7 +10,7 @@ import (
 )
 
 // ParseResponse parses an OpenSearch response and extracts metrics based on the query configuration
-func ParseResponse(response map[string]interface{}, query config.Query, prefix string) ([]prometheus.Metric, error) {
+func ParseResponse(response map[string]interface{}, query config.Query, prefix string, bucket_metrics bool) ([]prometheus.Metric, error) {
 	var metrics []prometheus.Metric
 
 	// Parse hits.total
@@ -49,7 +49,7 @@ func ParseResponse(response map[string]interface{}, query config.Query, prefix s
 
 	// Parse aggregations if present
 	if aggs, ok := response["aggregations"].(map[string]interface{}); ok {
-		aggMetrics := parseAggregations(aggs, query.Name, query.Team, nil, prefix)
+		aggMetrics := parseAggregations(aggs, query.Name, query.Team, nil, prefix, bucket_metrics)
 		metrics = append(metrics, aggMetrics...)
 	}
 
@@ -114,7 +114,7 @@ func extractMetric(response map[string]interface{}, query config.Query, metricCo
 	return prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, floatValue, labelValues...), nil
 }
 
-func parseAggregations(aggs map[string]interface{}, queryName, teamName string, parentLabels map[string]string, prefix string) []prometheus.Metric {
+func parseAggregations(aggs map[string]interface{}, queryName, teamName string, parentLabels map[string]string, prefix string, bucket_metrics bool) []prometheus.Metric {
 	var metrics []prometheus.Metric
 
 	for aggName, aggData := range aggs {
@@ -133,12 +133,14 @@ func parseAggregations(aggs map[string]interface{}, queryName, teamName string, 
 							labels[sanitizeLabelName(aggName)] = fmt.Sprintf("%v", key)
 						}
 
-						// Extract metrics from bucket
-						bucketMetrics := extractBucketMetrics(bucketMap, queryName, teamName, labels, prefix)
-						metrics = append(metrics, bucketMetrics...)
+						if bucket_metrics {
+							// Extract metrics from bucket
+							bucketMetrics := extractBucketMetrics(bucketMap, queryName, teamName, labels, prefix)
+							metrics = append(metrics, bucketMetrics...)
+						}
 
 						// Recursively parse sub-aggregations
-						subMetrics := parseAggregations(bucketMap, queryName, teamName, labels, prefix)
+						subMetrics := parseAggregations(bucketMap, queryName, teamName, labels, prefix, bucket_metrics)
 						metrics = append(metrics, subMetrics...)
 					}
 				}

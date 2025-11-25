@@ -55,7 +55,7 @@ func TestParseResponse_HitsAndTook(t *testing.T) {
 		"took": 15.0,
 	}
 	q := config.Query{Name: "my query", Team: "core"}
-	metrics, err := ParseResponse(resp, q, "opensearch_query_")
+	metrics, err := ParseResponse(resp, q, "opensearch_query_", true)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -108,7 +108,7 @@ func TestParseResponse_MetricMappingAndAggs(t *testing.T) {
 			{Name: "custom_metric", Path: "custom.value", LabelPaths: map[string]string{"dyn": "custom.labels.dyn"}},
 		},
 	}
-	metrics, err := ParseResponse(resp, q, "opensearch_query_")
+	metrics, err := ParseResponse(resp, q, "opensearch_query_", true)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

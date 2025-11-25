@@ -31,13 +31,14 @@ type Credential struct {
 
 // Query represents a team's query configuration
 type Query struct {
-	Name        string                 `yaml:"name"`
-	Team        string                 `yaml:"team"`
-	Description string                 `yaml:"description"`
-	Interval    time.Duration          `yaml:"interval"`
-	Indices     string                 `yaml:"indices"`
-	Query       map[string]interface{} `yaml:"query"`
-	Metrics     []MetricMapping        `yaml:"metrics"`
+	Name                  string                 `yaml:"name"`
+	Team                  string                 `yaml:"team"`
+	Description           string                 `yaml:"description"`
+	Interval              time.Duration          `yaml:"interval"`
+	Indices               string                 `yaml:"indices"`
+	Query                 map[string]interface{} `yaml:"query"`
+	Metrics               []MetricMapping        `yaml:"metrics"`
+	BucketMetricsDisabled bool                   `yaml:"bucket_metrics_disabled"`
 }
 
 // MetricMapping defines how to extract metrics from query results
