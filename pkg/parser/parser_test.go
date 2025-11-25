@@ -54,7 +54,7 @@ func TestParseResponse_HitsAndTook(t *testing.T) {
 		},
 		"took": 15.0,
 	}
-	q := config.Query{Name: "my query", Team: "core"}
+	q := config.Query{Name: "my query"}
 	metrics, err := ParseResponse(resp, q, "opensearch_query_", true)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -70,16 +70,6 @@ func TestParseResponse_HitsAndTook(t *testing.T) {
 		}
 		if metric.Gauge == nil || metric.Gauge.Value == nil {
 			t.Fatalf("expected gauge metric")
-		}
-		// must include team label
-		foundTeam := false
-		for _, lp := range metric.Label {
-			if lp.GetName() == "team" && lp.GetValue() == "core" {
-				foundTeam = true
-			}
-		}
-		if !foundTeam {
-			t.Fatalf("expected team label 'core' in metric labels")
 		}
 	}
 }
@@ -103,7 +93,6 @@ func TestParseResponse_MetricMappingAndAggs(t *testing.T) {
 	}
 	q := config.Query{
 		Name: "errors_by_service",
-		Team: "sre",
 		Metrics: []config.MetricMapping{
 			{Name: "custom_metric", Path: "custom.value", LabelPaths: map[string]string{"dyn": "custom.labels.dyn"}},
 		},

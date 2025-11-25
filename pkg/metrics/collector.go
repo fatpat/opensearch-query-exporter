@@ -56,12 +56,12 @@ func NewCollector(client *opensearch.Client, cfg *config.Config) *Collector {
 		queryDuration: prometheus.NewDesc(
 			"opensearch_query_duration_seconds",
 			"Duration of the query in seconds",
-			[]string{"query", "team"}, nil,
+			[]string{"query"}, nil,
 		),
 		querySuccess: prometheus.NewDesc(
 			"opensearch_query_success",
 			"Whether the query was successful",
-			[]string{"query", "team"}, nil,
+			[]string{"query"}, nil,
 		),
 		clusterHealthStatus: prometheus.NewDesc(
 			"opensearch_cluster_health_status",
@@ -166,15 +166,7 @@ func (c *Collector) collectQueryResults(ch chan<- prometheus.Metric) {
 
 	for queryName, result := range c.queryResults {
 		if result.err != nil {
-			// Find the query config to get team name
-			var teamName string
-			for _, q := range c.config.Queries {
-				if q.Name == queryName {
-					teamName = q.Team
-					break
-				}
-			}
-			ch <- prometheus.MustNewConstMetric(c.querySuccess, prometheus.GaugeValue, 0, queryName, teamName)
+			ch <- prometheus.MustNewConstMetric(c.querySuccess, prometheus.GaugeValue, 0, queryName)
 		} else {
 			for _, metric := range result.metrics {
 				ch <- metric
@@ -214,7 +206,7 @@ func (c *Collector) executeQuery(query config.Query) {
 	ctx, cancel := context.WithTimeout(context.Background(), c.config.Timeout)
 	defer cancel()
 
-	log.Printf("Executing query %s for team %s", query.Name, query.Team)
+	log.Printf("Executing query %s", query.Name)
 
 	// Execute the search
 	response, err := c.client.Search(ctx, query.Indices, query.Query)
@@ -237,8 +229,8 @@ func (c *Collector) executeQuery(query config.Query) {
 			result.metrics = metrics
 			// Add query metadata metrics
 			result.metrics = append(result.metrics,
-				prometheus.MustNewConstMetric(c.queryDuration, prometheus.GaugeValue, duration, query.Name, query.Team),
-				prometheus.MustNewConstMetric(c.querySuccess, prometheus.GaugeValue, 1, query.Name, query.Team),
+				prometheus.MustNewConstMetric(c.queryDuration, prometheus.GaugeValue, duration, query.Name),
+				prometheus.MustNewConstMetric(c.querySuccess, prometheus.GaugeValue, 1, query.Name),
 			)
 		}
 	}

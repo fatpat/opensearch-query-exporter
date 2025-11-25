@@ -19,9 +19,9 @@ func ParseResponse(response map[string]interface{}, query config.Query, prefix s
 			desc := prometheus.NewDesc(
 				fmt.Sprintf("%s%s_hits_total", prefix, sanitizeMetricName(query.Name)),
 				"Total number of hits for the query",
-				[]string{"team"}, nil,
+				[]string{}, nil,
 			)
-			metrics = append(metrics, prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, total, query.Team))
+			metrics = append(metrics, prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, total))
 		}
 	}
 
@@ -30,9 +30,9 @@ func ParseResponse(response map[string]interface{}, query config.Query, prefix s
 		desc := prometheus.NewDesc(
 			fmt.Sprintf("%s%s_took_milliseconds", prefix, sanitizeMetricName(query.Name)),
 			"Time taken for the query in milliseconds",
-			[]string{"team"}, nil,
+			[]string{}, nil,
 		)
-		metrics = append(metrics, prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, took, query.Team))
+		metrics = append(metrics, prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, took))
 	}
 
 	// Parse configured metrics
@@ -49,7 +49,7 @@ func ParseResponse(response map[string]interface{}, query config.Query, prefix s
 
 	// Parse aggregations if present
 	if aggs, ok := response["aggregations"].(map[string]interface{}); ok {
-		aggMetrics := parseAggregations(aggs, query.Name, query.Team, nil, prefix, bucket_metrics)
+		aggMetrics := parseAggregations(aggs, query.Name, nil, prefix, bucket_metrics)
 		metrics = append(metrics, aggMetrics...)
 	}
 
@@ -84,8 +84,8 @@ func extractMetric(response map[string]interface{}, query config.Query, metricCo
 
 	// Prepare labels
 	labels := make(map[string]string)
-	labelNames := []string{"team"}
-	labelValues := []string{query.Team}
+	labelNames := []string{}
+	labelValues := []string{}
 
 	// Add static labels
 	for k, v := range metricConfig.Labels {
@@ -114,7 +114,7 @@ func extractMetric(response map[string]interface{}, query config.Query, metricCo
 	return prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, floatValue, labelValues...), nil
 }
 
-func parseAggregations(aggs map[string]interface{}, queryName, teamName string, parentLabels map[string]string, prefix string, bucket_metrics bool) []prometheus.Metric {
+func parseAggregations(aggs map[string]interface{}, queryName string, parentLabels map[string]string, prefix string, bucket_metrics bool) []prometheus.Metric {
 	var metrics []prometheus.Metric
 
 	for aggName, aggData := range aggs {
@@ -135,20 +135,20 @@ func parseAggregations(aggs map[string]interface{}, queryName, teamName string, 
 
 						if bucket_metrics {
 							// Extract metrics from bucket
-							bucketMetrics := extractBucketMetrics(bucketMap, queryName, teamName, labels, prefix)
+							bucketMetrics := extractBucketMetrics(bucketMap, queryName, labels, prefix)
 							metrics = append(metrics, bucketMetrics...)
 						}
 
 						// Recursively parse sub-aggregations
-						subMetrics := parseAggregations(bucketMap, queryName, teamName, labels, prefix, bucket_metrics)
+						subMetrics := parseAggregations(bucketMap, queryName, labels, prefix, bucket_metrics)
 						metrics = append(metrics, subMetrics...)
 					}
 				}
 			} else {
 				// Handle metric aggregations (value-based)
 				if value, ok := extractFloat(aggMap["value"]); ok {
-					labelNames := []string{"team"}
-					labelValues := []string{teamName}
+					labelNames := []string{}
+					labelValues := []string{}
 
 					for k, v := range parentLabels {
 						labelNames = append(labelNames, k)
@@ -166,13 +166,13 @@ func parseAggregations(aggs map[string]interface{}, queryName, teamName string, 
 	return metrics
 }
 
-func extractBucketMetrics(bucket map[string]interface{}, queryName, teamName string, labels map[string]string, prefix string) []prometheus.Metric {
+func extractBucketMetrics(bucket map[string]interface{}, queryName string, labels map[string]string, prefix string) []prometheus.Metric {
 	var metrics []prometheus.Metric
 
 	// Extract doc_count
 	if docCount, ok := extractFloat(bucket["doc_count"]); ok {
-		labelNames := []string{"team"}
-		labelValues := []string{teamName}
+		labelNames := []string{}
+		labelValues := []string{}
 
 		for k, v := range labels {
 			labelNames = append(labelNames, k)

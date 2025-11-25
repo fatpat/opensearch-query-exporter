@@ -32,7 +32,6 @@ type Credential struct {
 // Query represents a team's query configuration
 type Query struct {
 	Name                  string                 `yaml:"name"`
-	Team                  string                 `yaml:"team"`
 	Description           string                 `yaml:"description"`
 	Interval              time.Duration          `yaml:"interval"`
 	Indices               string                 `yaml:"indices"`

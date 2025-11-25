@@ -96,7 +96,6 @@ func TestCollector_UpAndQueryMetrics(t *testing.T) {
 		QueryNamePrefix: "opensearch_query_",
 		Queries: []config.Query{{
 			Name:     "my_query",
-			Team:     "team1",
 			Interval: 100 * time.Millisecond,
 			Indices:  "idx",
 			Query:    map[string]interface{}{"size": 0},
