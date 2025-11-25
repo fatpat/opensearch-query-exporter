@@ -63,10 +63,20 @@ func main() {
 
 	// Create metrics collector
 	collector := metrics.NewCollector(client, cfg)
-	prometheus.MustRegister(collector)
 
-	// Set up HTTP server
-	http.Handle("/metrics", promhttp.Handler())
+	// Register prometheus handler + start HTTP server
+	if cfg.PromInternalMetricsDisabled {
+		registry := prometheus.NewRegistry()
+		registry.MustRegister(collector)
+		http.Handle("/metrics", promhttp.HandlerFor(
+			registry,
+			promhttp.HandlerOpts{},
+		))
+	} else {
+		prometheus.MustRegister(collector)
+		http.Handle("/metrics", promhttp.Handler())
+	}
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 <head><title>OpenSearch Exporter</title></head>

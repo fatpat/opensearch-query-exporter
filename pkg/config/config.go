@@ -11,12 +11,15 @@ import (
 
 // Config represents the main configuration structure
 type Config struct {
-	OpenSearchURL string        `yaml:"opensearch_url"`
-	Credentials   []Credential  `yaml:"credentials"`
-	CACertPath    string        `yaml:"ca_cert_path"`
-	Insecure      bool          `yaml:"insecure"`
-	Timeout       time.Duration `yaml:"timeout"`
-	Queries       []Query       `yaml:"queries"`
+	OpenSearchURL                string        `yaml:"opensearch_url"`
+	Credentials                  []Credential  `yaml:"credentials"`
+	CACertPath                   string        `yaml:"ca_cert_path"`
+	Insecure                     bool          `yaml:"insecure"`
+	Timeout                      time.Duration `yaml:"timeout"`
+	Queries                      []Query       `yaml:"queries"`
+	ClusterHealthMetricsDisabled bool          `yaml:"cluster_health_metrics_disabled"`
+	OpensearchUpMetricDisabled   bool          `yaml:"opensearch_up_metric_disabled"`
+	PromInternalMetricsDisabled  bool          `yaml:"prometheus_internal_metrics_disabled"`
 }
 
 // Credential represents a set of authentication credentials

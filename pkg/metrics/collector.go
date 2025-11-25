@@ -103,14 +103,20 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	defer cancel()
 
 	if err := c.client.Ping(ctx); err != nil {
-		ch <- prometheus.MustNewConstMetric(c.up, prometheus.GaugeValue, 0)
+		if !c.config.OpensearchUpMetricDisabled {
+			ch <- prometheus.MustNewConstMetric(c.up, prometheus.GaugeValue, 0)
+		}
 		log.Printf("OpenSearch ping failed: %v", err)
 		return
 	}
-	ch <- prometheus.MustNewConstMetric(c.up, prometheus.GaugeValue, 1)
+	if !c.config.OpensearchUpMetricDisabled {
+		ch <- prometheus.MustNewConstMetric(c.up, prometheus.GaugeValue, 1)
+	}
 
 	// Collect cluster health metrics
-	c.collectClusterHealth(ctx, ch)
+	if !c.config.ClusterHealthMetricsDisabled {
+		c.collectClusterHealth(ctx, ch)
+	}
 
 	// Collect query results
 	c.collectQueryResults(ch)
