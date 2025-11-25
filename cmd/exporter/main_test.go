@@ -31,4 +31,3 @@ func TestHelperProcess(t *testing.T) {
 	// The flag package in main will handle -h and exit.
 	main()
 }
-

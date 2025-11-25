@@ -20,6 +20,7 @@ type Config struct {
 	ClusterHealthMetricsDisabled bool          `yaml:"cluster_health_metrics_disabled"`
 	OpensearchUpMetricDisabled   bool          `yaml:"opensearch_up_metric_disabled"`
 	PromInternalMetricsDisabled  bool          `yaml:"prometheus_internal_metrics_disabled"`
+	QueryNamePrefix              string        `yaml:"query_name_prefix"`
 }
 
 // Credential represents a set of authentication credentials
@@ -86,6 +87,10 @@ func LoadConfig(path string) (*Config, error) {
 
 		// Note: CA path validation is performed during client initialization.
 		// If Insecure is false, a valid ca_cert_path must be provided there.
+	}
+
+	if config.QueryNamePrefix == "" {
+		config.QueryNamePrefix = "opensearch_query_"
 	}
 
 	// Validate queries

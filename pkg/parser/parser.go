@@ -10,14 +10,14 @@ import (
 )
 
 // ParseResponse parses an OpenSearch response and extracts metrics based on the query configuration
-func ParseResponse(response map[string]interface{}, query config.Query) ([]prometheus.Metric, error) {
+func ParseResponse(response map[string]interface{}, query config.Query, prefix string) ([]prometheus.Metric, error) {
 	var metrics []prometheus.Metric
 
 	// Parse hits.total
 	if hits, ok := response["hits"].(map[string]interface{}); ok {
 		if total := extractHitsTotal(hits); total >= 0 {
 			desc := prometheus.NewDesc(
-				fmt.Sprintf("opensearch_query_%s_hits_total", sanitizeMetricName(query.Name)),
+				fmt.Sprintf("%s%s_hits_total", prefix, sanitizeMetricName(query.Name)),
 				"Total number of hits for the query",
 				[]string{"team"}, nil,
 			)
@@ -28,7 +28,7 @@ func ParseResponse(response map[string]interface{}, query config.Query) ([]prome
 	// Parse took time
 	if took, ok := extractFloat(response["took"]); ok {
 		desc := prometheus.NewDesc(
-			fmt.Sprintf("opensearch_query_%s_took_milliseconds", sanitizeMetricName(query.Name)),
+			fmt.Sprintf("%s%s_took_milliseconds", prefix, sanitizeMetricName(query.Name)),
 			"Time taken for the query in milliseconds",
 			[]string{"team"}, nil,
 		)
@@ -37,7 +37,7 @@ func ParseResponse(response map[string]interface{}, query config.Query) ([]prome
 
 	// Parse configured metrics
 	for _, metricConfig := range query.Metrics {
-		metric, err := extractMetric(response, query, metricConfig)
+		metric, err := extractMetric(response, query, metricConfig, prefix)
 		if err != nil {
 			// Log but don't fail the entire parsing
 			continue
@@ -49,7 +49,7 @@ func ParseResponse(response map[string]interface{}, query config.Query) ([]prome
 
 	// Parse aggregations if present
 	if aggs, ok := response["aggregations"].(map[string]interface{}); ok {
-		aggMetrics := parseAggregations(aggs, query.Name, query.Team, nil)
+		aggMetrics := parseAggregations(aggs, query.Name, query.Team, nil, prefix)
 		metrics = append(metrics, aggMetrics...)
 	}
 
@@ -70,7 +70,7 @@ func extractHitsTotal(hits map[string]interface{}) float64 {
 	return -1
 }
 
-func extractMetric(response map[string]interface{}, query config.Query, metricConfig config.MetricMapping) (prometheus.Metric, error) {
+func extractMetric(response map[string]interface{}, query config.Query, metricConfig config.MetricMapping, prefix string) (prometheus.Metric, error) {
 	// Extract value from path
 	value, err := extractValueFromPath(response, metricConfig.Path)
 	if err != nil {
@@ -104,7 +104,7 @@ func extractMetric(response map[string]interface{}, query config.Query, metricCo
 	}
 
 	// Create metric
-	metricName := fmt.Sprintf("opensearch_query_%s_%s", sanitizeMetricName(query.Name), sanitizeMetricName(metricConfig.Name))
+	metricName := fmt.Sprintf("%s%s_%s", prefix, sanitizeMetricName(query.Name), sanitizeMetricName(metricConfig.Name))
 	help := metricConfig.Help
 	if help == "" {
 		help = fmt.Sprintf("Metric %s from query %s", metricConfig.Name, query.Name)
@@ -114,7 +114,7 @@ func extractMetric(response map[string]interface{}, query config.Query, metricCo
 	return prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, floatValue, labelValues...), nil
 }
 
-func parseAggregations(aggs map[string]interface{}, queryName, teamName string, parentLabels map[string]string) []prometheus.Metric {
+func parseAggregations(aggs map[string]interface{}, queryName, teamName string, parentLabels map[string]string, prefix string) []prometheus.Metric {
 	var metrics []prometheus.Metric
 
 	for aggName, aggData := range aggs {
@@ -134,11 +134,11 @@ func parseAggregations(aggs map[string]interface{}, queryName, teamName string, 
 						}
 
 						// Extract metrics from bucket
-						bucketMetrics := extractBucketMetrics(bucketMap, queryName, teamName, labels)
+						bucketMetrics := extractBucketMetrics(bucketMap, queryName, teamName, labels, prefix)
 						metrics = append(metrics, bucketMetrics...)
 
 						// Recursively parse sub-aggregations
-						subMetrics := parseAggregations(bucketMap, queryName, teamName, labels)
+						subMetrics := parseAggregations(bucketMap, queryName, teamName, labels, prefix)
 						metrics = append(metrics, subMetrics...)
 					}
 				}
@@ -153,7 +153,7 @@ func parseAggregations(aggs map[string]interface{}, queryName, teamName string, 
 						labelValues = append(labelValues, v)
 					}
 
-					metricName := fmt.Sprintf("opensearch_query_%s_%s", sanitizeMetricName(queryName), sanitizeMetricName(aggName))
+					metricName := fmt.Sprintf("%s%s_%s", prefix, sanitizeMetricName(queryName), sanitizeMetricName(aggName))
 					desc := prometheus.NewDesc(metricName, fmt.Sprintf("Aggregation %s from query %s", aggName, queryName), labelNames, nil)
 					metrics = append(metrics, prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, value, labelValues...))
 				}
@@ -164,7 +164,7 @@ func parseAggregations(aggs map[string]interface{}, queryName, teamName string, 
 	return metrics
 }
 
-func extractBucketMetrics(bucket map[string]interface{}, queryName, teamName string, labels map[string]string) []prometheus.Metric {
+func extractBucketMetrics(bucket map[string]interface{}, queryName, teamName string, labels map[string]string, prefix string) []prometheus.Metric {
 	var metrics []prometheus.Metric
 
 	// Extract doc_count
@@ -177,7 +177,7 @@ func extractBucketMetrics(bucket map[string]interface{}, queryName, teamName str
 			labelValues = append(labelValues, v)
 		}
 
-		metricName := fmt.Sprintf("opensearch_query_%s_doc_count", sanitizeMetricName(queryName))
+		metricName := fmt.Sprintf("%s%s_doc_count", prefix, sanitizeMetricName(queryName))
 		desc := prometheus.NewDesc(metricName, fmt.Sprintf("Document count from query %s", queryName), labelNames, nil)
 		metrics = append(metrics, prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, docCount, labelValues...))
 	}

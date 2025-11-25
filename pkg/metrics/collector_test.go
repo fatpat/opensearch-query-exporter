@@ -89,10 +89,11 @@ func TestCollector_UpAndQueryMetrics(t *testing.T) {
 	defer srv.Close()
 
 	cfg := &config.Config{
-		OpenSearchURL: srv.URL,
-		Credentials:   []config.Credential{{Username: "u", Password: "p"}},
-		Insecure:      true,
-		Timeout:       2 * time.Second,
+		OpenSearchURL:   srv.URL,
+		Credentials:     []config.Credential{{Username: "u", Password: "p"}},
+		Insecure:        true,
+		Timeout:         2 * time.Second,
+		QueryNamePrefix: "opensearch_query_",
 		Queries: []config.Query{{
 			Name:     "my_query",
 			Team:     "team1",
@@ -165,4 +166,3 @@ func TestCollector_PingFailureSetsUpZero(t *testing.T) {
 		t.Fatalf("expected opensearch_up=0")
 	}
 }
-

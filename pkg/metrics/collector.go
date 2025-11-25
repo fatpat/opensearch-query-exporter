@@ -229,7 +229,7 @@ func (c *Collector) executeQuery(query config.Query) {
 		log.Printf("Query %s failed: %v", query.Name, err)
 	} else {
 		// Parse the response and extract metrics
-		metrics, err := parser.ParseResponse(response, query)
+		metrics, err := parser.ParseResponse(response, query, c.config.QueryNamePrefix)
 		if err != nil {
 			log.Printf("Failed to parse response for query %s: %v", query.Name, err)
 			result.err = err
