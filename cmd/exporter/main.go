@@ -20,6 +20,7 @@ import (
 var (
 	listenAddress = flag.String("listen-address", ":9206", "Address to listen on for metrics")
 	configPath    = flag.String("config", "config.yaml", "Path to configuration file")
+	queriesDir    = flag.String("queries-dir", "", "Directory for queries, 1 file per query")
 	opensearchURL = flag.String("opensearch-url", "https://localhost:9200", "OpenSearch URL (must be https)")
 	insecure      = flag.Bool("insecure", false, "Skip TLS certificate verification (insecure)")
 	timeout       = flag.Duration("timeout", 30*time.Second, "Query timeout")
@@ -36,6 +37,11 @@ func main() {
 	cfg, err := config.LoadConfig(*configPath)
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
+	cfg, err = config.LoadQueriesDir(cfg, *queriesDir)
+	if err != nil {
+		log.Fatalf("Failed to load additional queries: %v", err)
 	}
 
 	// Override config with command line flags if provided

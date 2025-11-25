@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"io/fs"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -95,7 +97,41 @@ func LoadConfig(path string) (*Config, error) {
 		config.QueryNamePrefix = "opensearch_query_"
 	}
 
-	// Validate queries
+	return &config, nil
+}
+
+// LoadConfigDir loads all YAML files from a directory and merges them
+func LoadQueriesDir(config *Config, dir string) (*Config, error) {
+	if dir != "" {
+
+		filesystem := os.DirFS(dir)
+
+		fs.WalkDir(filesystem, ".", func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			path = dir + "/" + path
+			if !strings.HasSuffix(path, ".yaml") && !strings.HasSuffix(path, ".yml") {
+				return nil
+			}
+			// .yaml file
+			data, err := os.ReadFile(path)
+			if err != nil {
+				log.Fatalf("failed to read query file: %s", err)
+			}
+
+			var query Query
+			if err := yaml.Unmarshal(data, &query); err != nil {
+				log.Fatalf("failed to parse query file %s: %s", path, err)
+			}
+
+			config.Queries = append(config.Queries, query)
+			return nil
+		})
+	}
+
+	//validate queries
 	for i := range config.Queries {
 		if config.Queries[i].Name == "" {
 			return nil, fmt.Errorf("query #%d: name is required", i+1)
@@ -120,12 +156,5 @@ func LoadConfig(path string) (*Config, error) {
 		}
 	}
 
-	return &config, nil
-}
-
-// LoadConfigDir loads all YAML files from a directory and merges them
-func LoadConfigDir(dir string) (*Config, error) {
-	// This is a simplified version - in production you might want to
-	// support loading multiple config files from a directory
-	return LoadConfig(dir)
+	return config, nil
 }
