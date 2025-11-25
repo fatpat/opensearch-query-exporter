@@ -28,7 +28,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
 	if cfg.Insecure {
 		tlsConfig.InsecureSkipVerify = true
-	} else {
+	} else if cfg.CACertPath != "" {
 		caCertPool := x509.NewCertPool()
 		caCert, err := os.ReadFile(cfg.CACertPath)
 		if err != nil {
