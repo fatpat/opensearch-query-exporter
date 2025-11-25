@@ -90,9 +90,6 @@ func LoadConfig(path string) (*Config, error) {
 		if config.Queries[i].Name == "" {
 			return nil, fmt.Errorf("query #%d: name is required", i+1)
 		}
-		if config.Queries[i].Team == "" {
-			return nil, fmt.Errorf("query %s: team is required", config.Queries[i].Name)
-		}
 		if config.Queries[i].Interval == 0 {
 			config.Queries[i].Interval = 60 * time.Second
 		}
