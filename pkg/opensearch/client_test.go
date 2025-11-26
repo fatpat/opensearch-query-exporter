@@ -92,8 +92,10 @@ func TestClient_TLS_WithCACertAndFailover(t *testing.T) {
 			{Username: "bad", Password: "bad"},
 			{Username: "good", Password: "pwd"},
 		},
-		CACertPath: caPath,
-		Timeout:    5 * time.Second,
+		CACertPath:      caPath,
+		Timeout:         5 * time.Second,
+		GlobalPrefix:    "opensearch_",
+		QueryNamePrefix: "opensearch_query_",
 	}
 
 	client, err := NewClient(cfg)
@@ -129,10 +131,12 @@ func TestClient_TLS_InsecureSkipsVerify(t *testing.T) {
 	t.Cleanup(func() { srv.Close() })
 
 	cfg := &config.Config{
-		OpenSearchURL: "https://" + srv.Listener.Addr().String(),
-		Credentials:   []config.Credential{{Username: "u", Password: "p"}},
-		Insecure:      true,
-		Timeout:       5 * time.Second,
+		OpenSearchURL:   "https://" + srv.Listener.Addr().String(),
+		Credentials:     []config.Credential{{Username: "u", Password: "p"}},
+		Insecure:        true,
+		Timeout:         5 * time.Second,
+		GlobalPrefix:    "opensearch_",
+		QueryNamePrefix: "opensearch_query_",
 	}
 	client, err := NewClient(cfg)
 	if err != nil {
@@ -203,10 +207,12 @@ func TestClient_Search_And_Health_Endpoints(t *testing.T) {
 	t.Cleanup(func() { srv.Close() })
 
 	cfg := &config.Config{
-		OpenSearchURL: "https://" + srv.Listener.Addr().String(),
-		Credentials:   []config.Credential{{Username: "u", Password: "p"}},
-		Insecure:      true,
-		Timeout:       3 * time.Second,
+		OpenSearchURL:   "https://" + srv.Listener.Addr().String(),
+		Credentials:     []config.Credential{{Username: "u", Password: "p"}},
+		Insecure:        true,
+		Timeout:         3 * time.Second,
+		GlobalPrefix:    "opensearch_",
+		QueryNamePrefix: "opensearch_query_",
 	}
 	client, err := NewClient(cfg)
 	if err != nil {
@@ -264,10 +270,12 @@ func TestClient_Search_FailoverOnUnauthorized(t *testing.T) {
 	t.Cleanup(func() { srv.Close() })
 
 	cfg := &config.Config{
-		OpenSearchURL: "https://" + srv.Listener.Addr().String(),
-		Credentials:   []config.Credential{{Username: "bad", Password: "bad"}, {Username: "u", Password: "p"}},
-		Insecure:      true,
-		Timeout:       3 * time.Second,
+		OpenSearchURL:   "https://" + srv.Listener.Addr().String(),
+		Credentials:     []config.Credential{{Username: "bad", Password: "bad"}, {Username: "u", Password: "p"}},
+		Insecure:        true,
+		Timeout:         3 * time.Second,
+		GlobalPrefix:    "opensearch_",
+		QueryNamePrefix: "opensearch_query_",
 	}
 	client, err := NewClient(cfg)
 	if err != nil {

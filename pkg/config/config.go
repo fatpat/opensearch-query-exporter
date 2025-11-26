@@ -22,6 +22,7 @@ type Config struct {
 	ClusterHealthMetricsDisabled bool              `yaml:"cluster_health_metrics_disabled"`
 	OpensearchUpMetricDisabled   bool              `yaml:"opensearch_up_metric_disabled"`
 	PromInternalMetricsDisabled  bool              `yaml:"prometheus_internal_metrics_disabled"`
+	GlobalPrefix                 string            `yaml:"global_prefix"`
 	QueryNamePrefix              string            `yaml:"query_name_prefix"`
 	Labels                       map[string]string `yaml:"labels"`
 }
@@ -93,9 +94,16 @@ func LoadConfig(path string) (*Config, error) {
 		// If Insecure is false, a valid ca_cert_path must be provided there.
 	}
 
-	if config.QueryNamePrefix == "" {
-		config.QueryNamePrefix = "opensearch_query_"
+	if config.GlobalPrefix == "" {
+		config.GlobalPrefix = "opensearch_"
 	}
+
+	if config.QueryNamePrefix == "" {
+		config.QueryNamePrefix = "query_"
+	}
+	config.QueryNamePrefix = config.GlobalPrefix + config.QueryNamePrefix
+
+	fmt.Printf("prefix=%s", config.GlobalPrefix)
 
 	return &config, nil
 }

@@ -49,32 +49,32 @@ func NewCollector(client *opensearch.Client, cfg *config.Config) *Collector {
 		stopChan:     make(chan struct{}),
 
 		up: prometheus.NewDesc(
-			"opensearch_up",
+			cfg.GlobalPrefix+"up",
 			"Whether the OpenSearch cluster is reachable",
 			nil, nil,
 		),
 		queryDuration: prometheus.NewDesc(
-			"opensearch_query_duration_seconds",
+			cfg.QueryNamePrefix+"duration_seconds",
 			"Duration of the query in seconds",
 			[]string{"query"}, nil,
 		),
 		querySuccess: prometheus.NewDesc(
-			"opensearch_query_success",
+			cfg.QueryNamePrefix+"success",
 			"Whether the query was successful",
 			[]string{"query"}, nil,
 		),
 		clusterHealthStatus: prometheus.NewDesc(
-			"opensearch_cluster_health_status",
+			cfg.GlobalPrefix+"cluster_health_status",
 			"Cluster health status (0=green, 1=yellow, 2=red)",
 			[]string{"cluster"}, nil,
 		),
 		clusterHealthNodes: prometheus.NewDesc(
-			"opensearch_cluster_health_nodes_total",
+			cfg.GlobalPrefix+"cluster_health_nodes_total",
 			"Total number of nodes in the cluster",
 			[]string{"cluster"}, nil,
 		),
 		clusterHealthShards: prometheus.NewDesc(
-			"opensearch_cluster_health_shards_total",
+			cfg.GlobalPrefix+"cluster_health_shards_total",
 			"Total number of shards in the cluster",
 			[]string{"cluster", "type"}, nil,
 		),
